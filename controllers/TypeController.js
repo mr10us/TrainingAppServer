@@ -1,4 +1,5 @@
 const Types = require("../models/TypesModel");
+const { Op } = require("sequelize");
 
 async function create(req, res) {
   try {
@@ -18,14 +19,14 @@ async function edit(req, res) {
   try {
     const type = await Types.findByPk(typeId);
     if (!type) {
-      return res.status(404).json({ error: 'Type not found' });
+      return res.status(404).json({ error: "Type not found" });
     }
 
     await type.update({ name });
     res.status(200).json(type);
   } catch (error) {
-    console.error('Error editing type:', error);
-    res.status(500).json({ error: 'Could not edit type' });
+    console.error("Error editing type:", error);
+    res.status(500).json({ error: "Could not edit type" });
   }
 }
 
@@ -67,7 +68,6 @@ async function getAll(req, res) {
   }
 }
 
-
 async function getOne(req, res) {
   const typeId = req.params.id;
   try {
@@ -82,9 +82,27 @@ async function getOne(req, res) {
   }
 }
 
+async function remove(req, res) {
+  const typeId = req.params.id;
+  try {
+    const type = await Types.findByPk(typeId);
+    if (!type) {
+      return res.status(404).json({ error: "Type not found" });
+    }
+
+    await type.destroy();
+    res.status(204).end();
+  } catch (error) {
+    console.error("Error removing type:", error);
+    res.status(500).json({ error: "Could not remove type" });
+  }
+}
+
+
 module.exports = {
   create,
   edit,
   getAll,
   getOne,
+  remove,
 };

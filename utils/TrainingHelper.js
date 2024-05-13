@@ -1,9 +1,4 @@
-const Categories = require("../models/CategoriesModel");
-const TrainingCategories = require("../models/TrainingCategories");
-const Types = require("../models/TypesModel");
-const TrainingTypes = require("../models/TrainingTypes");
 const Exercises = require("../models/ExerciseModel");
-const TrainingExercise = require("../models/TrainingExercise");
 const Training = require("../models/TrainingModel");
 
 class TrainingHelper {
@@ -20,13 +15,13 @@ class TrainingHelper {
   }
 
   async addExercises(exercises) {
- 
     for (const exe of exercises) {
       const existingExercise = await Exercises.findOne({
         where: { id: exe.id },
       });
 
-      if (!existingExercise) throw Error(`Training with ID ${exe.id} does not exist`);
+      if (!existingExercise)
+        throw Error(`Training with ID ${exe.id} does not exist`);
     }
     const training = await this.#checkForTraining();
 
@@ -35,46 +30,6 @@ class TrainingHelper {
         trainingId: training.id,
         exerciseId: exe.id,
         ordinal_number: exe.ordinal_number,
-      });
-    }
-  }
-
-  async addCategories(categories) {
-
-    for (const id of categories) {
-      const existingCategory = await Categories.findOne({
-        where: { id },
-      });
-
-      if (!existingCategory)
-        category = await Categories.create({ id });
-    }
-    const training = await this.#checkForTraining();
-
-    for (const id of categories) {
-      await TrainingCategories.create({
-        trainingId: training.id,
-        categoryId: id,
-      });
-    }
-  }
-
-  async addTypes(types) {
-
-    for (const id of types) {
-      const existingType = await Types.findOne({
-        where: { id },
-      });
-
-      if (!existingType) await Types.create({ id });
-    }
-
-    const training = await this.#checkForTraining();
-
-    for (const id of types) {
-      await TrainingTypes.create({
-        training_id: training.id,
-        type_id: id,
       });
     }
   }

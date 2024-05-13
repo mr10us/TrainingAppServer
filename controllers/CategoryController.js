@@ -1,4 +1,5 @@
 const Categories = require("../models/CategoriesModel");
+const { Op } = require("sequelize");
 
 async function create(req, res) {
   try {
@@ -82,9 +83,26 @@ async function getOne(req, res) {
   }
 }
 
+async function remove(req, res) {
+  const categoryId = req.params.id;
+  try {
+    const category = await Categories.findByPk(categoryId);
+    if (!category) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    await category.destroy();
+    res.status(204).end();
+  } catch (error) {
+    console.error("Error removing category:", error);
+    res.status(500).json({ error: "Could not remove category" });
+  }
+}
+
 module.exports = {
   create,
   edit,
   getAll,
   getOne,
+  remove
 };

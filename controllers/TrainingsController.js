@@ -1,12 +1,9 @@
 const Training = require("../models/TrainingModel");
 const uuid = require("uuid");
 const TrainingHelper = require("../utils/TrainingHelper");
-const TrainingCategories = require("../models/TrainingCategories");
 const Categories = require("../models/CategoriesModel");
 const Types = require("../models/TypesModel");
-const TrainingTypes = require("../models/TrainingTypes");
 const ApiError = require("../error/ApiError");
-const axios = require("axios");
 const path = require("path");
 
 class TrainingsController {
@@ -21,19 +18,14 @@ class TrainingsController {
         title,
         content,
         exec_time,
-        signal,
       } = req.body;
-
-      const source = axios.CancelToken.source();
-      signal.addEventListener("abort", () => {
-        source.cancel("Request canceled by client");
-      });
 
       if (!exercise) throw Error("Не можна створити тренування без вправ");
 
       const { image } = req.files;
       let fileName = uuid.v4() + ".jpg";
       image.mv(path.resolve(__dirname, "..", "static", fileName));
+
       const training = await Training.create({
         level,
         gender,
@@ -48,15 +40,7 @@ class TrainingsController {
         await helper.addExercises(exercise);
       }
 
-      if (category) {
-        await helper.addCategories(category);
-      }
-
-      if (type) {
-        await helper.addTypes(type);
-      }
-
-      return res.json({ message: "OK" }).status(200);
+      return res.json(training).status(200);
     } catch (e) {
       next(ApiError.badRequest(e.message));
     }
