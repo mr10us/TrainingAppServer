@@ -15,7 +15,7 @@ async function create(req, res) {
     const { title, content, types, categories } = req.body;
     const { video } = req.files;
 
-    const vidMimeType = video.mimetype.split("/")[1];
+    const vidMimeType = "mp4";
     const fileName = uuid.v4() + "." + vidMimeType;
     const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
     video.mv(path.resolve(__dirname, "..", "static/video", fileName));
