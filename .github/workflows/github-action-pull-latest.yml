@@ -12,12 +12,9 @@ jobs:
     steps:
     - name: executing remote ssh commands using password
       uses: appleboy/ssh-action@v1.0.0
-      env:
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        envs: ACCESS_TOKEN
-        script: cd easycut && bash var/pull.sh
+        script: cd artem/TrainingAppServer && git pull
