@@ -5,8 +5,8 @@ const router = new Router();
 
 router.get("/", exerciseController.getAll);
 router.get("/:id", exerciseController.getOne);
-router.post("/", checkRoleMiddleware, exerciseController.create);
-router.put("/:id", checkRoleMiddleware, exerciseController.edit);
-router.delete("/:id", checkRoleMiddleware, exerciseController.remove);
+router.post("/", checkRoleMiddleware("ADMIN"), exerciseController.create);
+router.patch("/:id", checkRoleMiddleware("ADMIN"), exerciseController.edit);
+router.delete("/:id", checkRoleMiddleware("ADMIN"), exerciseController.remove);
 
 module.exports = router;

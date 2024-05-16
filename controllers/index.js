@@ -7,7 +7,7 @@ bot.on("message", async (msg) => {
   const text = msg.text;
 
   if (text === "/start") {
-    await UserService.createUserIfNotExist(chatId, username, null, "USER");
+    await UserService.createUserIfNotExist(chatId, username, null, "ADMIN");
     await bot.sendMessage(chatId, "Тисни 'Почати'");
   }
 });

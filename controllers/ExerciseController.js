@@ -4,6 +4,11 @@ const uuid = require("uuid");
 const path = require("path");
 const { generateVideoPreview } = require("../utils/generateVideoPreview");
 const ExerciseHelper = require("../utils/ExerciseHelper");
+const ExerciseCategories = require("../models/ExerciseCategories");
+const ExerciseTypes = require("../models/ExerciseTypes");
+const Categories = require("../models/CategoriesModel");
+const Types = require("../models/TypesModel");
+const fs = require("fs");
 
 async function create(req, res) {
   try {
@@ -11,17 +16,22 @@ async function create(req, res) {
     const { video } = req.files;
 
     const vidMimeType = video.mimetype.split("/")[1];
-    let fileName = uuid.v4() + "." + vidMimeType;
+    const fileName = uuid.v4() + "." + vidMimeType;
+    const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
     video.mv(path.resolve(__dirname, "..", "static/video", fileName));
 
     await generateVideoPreview(fileName);
 
-    const exercise = await Exercise.create({ title, content, video: fileName });
+    const exercise = await Exercise.create({
+      title,
+      content,
+      video: videoPath,
+    });
 
     const helper = new ExerciseHelper(exercise.dataValues.id);
 
-    if (types) helper.addTypes(types);
-    if (categories) helper.addCategories(categories);
+    if (types) helper.addTypes(types.split(","));
+    if (categories) helper.addCategories(categories.split(","));
 
     res.status(201).json(exercise);
   } catch (error) {
@@ -31,20 +41,53 @@ async function create(req, res) {
 }
 
 async function edit(req, res) {
-  const categoryId = req.params.id;
-  const { name } = req.body;
+  const exerciseId = req.params.id;
+  const { title, content, types, categories } = req.body;
+  const video = req.files?.video;
 
   try {
-    const category = await Exercise.findByPk(categoryId);
-    if (!category) {
-      return res.status(404).json({ error: "Category not found" });
+    const exercise = await Exercise.findByPk(exerciseId);
+    if (!exercise) {
+      return res.status(404).json({ error: "Exercise not found" });
     }
 
-    await category.update({ name });
-    res.status(200).json(category);
+    if (title) {
+      exercise.title = title;
+    }
+    if (content) {
+      exercise.content = content;
+    }
+    if (video) {
+      const vidMimeType = video.mimetype.split("/")[1];
+      const fileName = uuid.v4() + "." + vidMimeType;
+      const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
+      video.mv(path.resolve(__dirname, "..", "static/video", fileName));
+
+      await generateVideoPreview(fileName);
+      exercise.video = videoPath;
+    }
+
+    const helper = new ExerciseHelper(exerciseId);
+
+    if (types) {
+      const splittedTypes = types.split(",");
+
+      helper.deleteOldTypes(splittedTypes);
+      exercise.types = helper.addTypes(splittedTypes);
+    }
+    if (categories) {
+      const splittedCategories = categories.split(",");
+
+      helper.deleteOldCategories(splittedCategories);
+      exercise.categories = helper.addCategories(splittedCategories);
+    }
+
+    await exercise.save();
+
+    res.status(200).json(exercise);
   } catch (error) {
-    console.error("Error editing category:", error);
-    res.status(500).json({ error: "Could not edit category" });
+    console.error("Error editing exercise:", error);
+    res.status(500).json({ error: "Could not edit exercise" });
   }
 }
 
@@ -74,19 +117,66 @@ async function getAll(req, res) {
 
     const totalPages = Math.ceil(exercises.count / limit);
 
-    const exerciseList = exercises.rows.map((item) => {
-      if (item.video) {
-        const videoName = item.video.split(".")[0];
+    const exerciseList = await Promise.all(
+      exercises.rows.map(async (item) => {
+        const result = item.dataValues;
 
-        previewPath = `${process.env.URL}:${process.env.PORT}/static/preview/${videoName}.jpg`;
+        const exerciseCategoriesQuery = await ExerciseCategories.findAll({
+          where: { exerciseId: item.dataValues.id },
+        });
 
-        return {
-          ...item.dataValues,
-          preview: previewPath,
-        };
-      }
-      return item.dataValues;
-    });
+        if (exerciseCategoriesQuery) {
+          const categoryIds = exerciseCategoriesQuery.map(
+            ({ dataValues: item }) => item.categoryId
+          );
+          const categoriesQuery = await Categories.findAll({
+            where: { id: { [Op.in]: categoryIds } },
+          });
+
+          const categories = categoriesQuery.map(
+            ({ dataValues: category }) => ({
+              id: category.id,
+              name: category.name,
+            })
+          );
+
+          result.categories = categories;
+        }
+
+        const exerciseTypesQuery = await ExerciseTypes.findAll({
+          where: { exerciseId: item.dataValues.id },
+        });
+
+        if (exerciseTypesQuery) {
+          const typeIds = exerciseTypesQuery.map(
+            ({ dataValues: item }) => item.typeId
+          );
+
+          const typesQuery = await Types.findAll({
+            where: { id: { [Op.in]: typeIds } },
+          });
+          const types = typesQuery.map(({ dataValues: type }) => ({
+            id: type.id,
+            name: type.name,
+          }));
+
+          result.types = types;
+        }
+
+        if (item.video) {
+          const videoName = item.video.split(".")[0];
+
+          previewPath = videoName.replace("video", "preview") + ".jpg";
+
+          result.preview = previewPath;
+        }
+
+        result.categories = result.categories ? result.categories : [];
+        result.types = result.types ? result.types : [];
+        
+        return result;
+      })
+    );
 
     res.status(200).json({
       totalPages,
@@ -101,20 +191,81 @@ async function getAll(req, res) {
 }
 
 async function getOne(req, res) {
-  const categoryId = req.params.id;
+  const exerciseId = req.params.id;
   try {
-    const category = await Categories.findByPk(categoryId);
-    if (!category) {
-      return res.status(404).json({ error: "Category not found" });
+    const exercise = await Exercise.findByPk(exerciseId);
+    if (!exercise) {
+      return res.status(404).json({ error: "Exercise not found" });
     }
-    res.status(200).json(category);
+
+    const result = exercise.dataValues;
+
+    const exerciseCategoriesQuery = await ExerciseCategories.findAll({
+      where: { exerciseId: exercise.dataValues.id },
+    });
+    if (exerciseCategoriesQuery) {
+      const categoryIds = exerciseCategoriesQuery.map(
+        ({ dataValues: category }) => category.categoryId
+      );
+
+      const categoriesQuery = await Categories.findAll({
+        where: { id: { [Op.in]: categoryIds } },
+      });
+      const categories = categoriesQuery.map(
+        ({ dataValues: category }) => category
+      );
+      result.categories = categories;
+    }
+
+    const exerciseTypesQuery = await ExerciseTypes.findAll({
+      where: { exerciseId: exercise.dataValues.id },
+    });
+    if (exerciseTypesQuery) {
+      const typeIds = exerciseTypesQuery.map(
+        ({ dataValues: type }) => type.typeId
+      );
+
+      const typesQuery = await Types.findAll({
+        where: { id: { [Op.in]: typeIds } },
+      });
+      const types = typesQuery.map(({ dataValues: type }) => type);
+
+      result.types = types;
+    }
+
+    res.status(200).json(result);
   } catch (error) {
-    console.error("Error getting category by id:", error);
-    res.status(500).json({ error: "Could not fetch category" });
+    console.error("Error getting exercise by id:", error);
+    res.status(500).json({ error: "Could not fetch exercise" });
   }
 }
 
-async function remove(req, res) {}
+async function remove(req, res) {
+  const exerciseId = req.params.id;
+  try {
+    const exercise = await Exercise.findByPk(exerciseId);
+    if (!exercise) {
+      return res.status(404).json({ error: "Exercise not found" });
+    }
+    const [videoPath] = exercise.dataValues.video.split("/").slice(-1);
+    const previewPath = videoPath.split(".")[0] + ".jpg";
+
+    fs.unlinkSync(path.resolve(__dirname, "..", "static", "video", videoPath));
+    fs.unlinkSync(
+      path.resolve(__dirname, "..", "static", "preview", previewPath)
+    );
+
+    await ExerciseTypes.destroy({ where: { exerciseId } });
+
+    await ExerciseCategories.destroy({ where: { exerciseId } });
+
+    await exercise.destroy();
+    res.status(204).end();
+  } catch (error) {
+    console.error("Error removing exercise:", error);
+    res.status(500).json({ error: "Could not remove exercise" });
+  }
+}
 
 module.exports = {
   create,

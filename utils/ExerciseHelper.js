@@ -3,6 +3,7 @@ const Types = require("../models/TypesModel");
 const ExerciseTypes = require("../models/ExerciseTypes");
 const ExerciseCategories = require("../models/ExerciseCategories");
 const Exercises = require("../models/ExerciseModel");
+const { Op } = require("sequelize");
 
 class ExerciseHelper {
   constructor(exerciseID) {
@@ -29,11 +30,20 @@ class ExerciseHelper {
     const exercise = await this.#checkForExercise();
 
     for (const id of categories) {
-      await ExerciseCategories.create({
-        exerciseId: exercise.id,
-        categoryId: id,
+      const existingRelation = await ExerciseCategories.findOne({
+        where: { categoryId: id, exerciseId: exercise.id },
       });
+      if (!existingRelation)
+        await ExerciseCategories.create({
+          exerciseId: exercise.id,
+          categoryId: id,
+        });
     }
+
+    const newCategories = await Categories.findAndCountAll({
+      where: { id: { [Op.in]: categories } },
+    });
+    return newCategories.rows
   }
 
   async addTypes(types) {
@@ -48,9 +58,60 @@ class ExerciseHelper {
     const exercise = await this.#checkForExercise();
 
     for (const id of types) {
-      await ExerciseTypes.create({
-        exerciseId: exercise.id,
-        typeId: id,
+      const existingRelation = await ExerciseTypes.findOne({
+        where: { typeId: id, exerciseId: exercise.id },
+      });
+      if (!existingRelation)
+        await ExerciseTypes.create({
+          exerciseId: exercise.id,
+          typeId: id,
+        });
+    }
+    const newTypes = await Types.findAndCountAll({
+      where: { id: { [Op.in]: types } },
+    });
+    return newTypes.rows
+  }
+  async deleteOldTypes(newTypes) {
+    const exercise = await this.#checkForExercise();
+
+    const oldTypes = await ExerciseTypes.findAll({
+      where: { exerciseId: exercise.id },
+    });
+
+    const oldTypeIds = oldTypes.map((oldType) =>
+      oldType.getDataValue("typeId")
+    );
+
+    const typesToDelete = oldTypeIds.filter(
+      (oldTypeId) => !newTypes.includes(oldTypeId)
+    );
+
+    for (const typeId of typesToDelete) {
+      await ExerciseTypes.destroy({
+        where: { typeId, exerciseId: exercise.id },
+      });
+    }
+  }
+
+  async deleteOldCategories(newCategories) {
+    const exercise = await this.#checkForExercise();
+
+    const oldCategories = await ExerciseCategories.findAll({
+      where: { exerciseId: exercise.id },
+    });
+
+    const oldCategoryIds = oldCategories.map((oldCategory) =>
+      oldCategory.getDataValue("categoryId")
+    );
+
+    const categoriesToDelete = oldCategoryIds.filter(
+      (oldCategoryId) => !newCategories.includes(oldCategoryId)
+    );
+
+    for (const categoryId of categoriesToDelete) {
+      await ExerciseCategories.destroy({
+        where: { categoryId, exerciseId: exercise.id },
       });
     }
   }

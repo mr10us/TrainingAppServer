@@ -12,24 +12,23 @@ class TrainingsController {
       let {
         level,
         gender,
-        type,
-        category,
         exercise,
         title,
         content,
         exec_time,
       } = req.body;
 
-      if (!exercise) throw Error("Не можна створити тренування без вправ");
+      if (!exercise) throw Error("Can not create training with no exercises");
 
       const { image } = req.files;
       let fileName = uuid.v4() + ".jpg";
-      image.mv(path.resolve(__dirname, "..", "static", fileName));
+      const imagePath = `${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
+      image.mv(path.resolve(__dirname, "..", "static/image", fileName));
 
       const training = await Training.create({
         level,
         gender,
-        image: fileName,
+        image: imagePath,
         title,
         content,
         exec_time,
@@ -63,28 +62,28 @@ class TrainingsController {
     const types = type ? type.split(",") : [];
     const levels = level ? level.split(",") : [];
 
-    if (category) {
-      filterClause.include.push({
-        include: {
-          model: Categories,
-          through: TrainingCategories,
-          where: {
-            id: categories,
-          },
-        },
-      });
-    }
-    if (type) {
-      filterClause.include.push({
-        include: {
-          model: Types,
-          through: TrainingTypes,
-          where: {
-            id: types,
-          },
-        },
-      });
-    }
+    // if (category) {
+    //   filterClause.include.push({
+    //     include: {
+    //       model: Categories,
+    //       through: TrainingCategories,
+    //       where: {
+    //         id: categories,
+    //       },
+    //     },
+    //   });
+    // }
+    // if (type) {
+    //   filterClause.include.push({
+    //     include: {
+    //       model: Types,
+    //       through: TrainingTypes,
+    //       where: {
+    //         id: types,
+    //       },
+    //     },
+    //   });
+    // }
     if (gender) {
       filterClause.where.gender = gender;
     }
