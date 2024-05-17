@@ -1,5 +1,5 @@
 const path = require("path");
-const { exec } = require("child_process");
+const extractFrames = require("ffmpeg-extract-frames");
 
 async function generateVideoPreview(videoName) {
   const videoPath = path.resolve(__dirname, "..", "static/video", videoName);
@@ -9,17 +9,12 @@ async function generateVideoPreview(videoName) {
     "static/preview",
     `${videoName.split(".")[0]}.jpg`
   );
-  const command = `ffmpeg -i "${videoPath}" -ss 00:00:05 -vframes 1 "${previewPath}"`;
 
   try {
-    await new Promise((resolve, reject) => {
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(previewPath);
-        }
-      });
+    await extractFrames({
+      input: videoPath,
+      output: previewPath,
+      offsets: [5000] // 5000 ms = 5 seconds
     });
     return previewPath;
   } catch (error) {

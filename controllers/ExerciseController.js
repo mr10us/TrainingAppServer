@@ -58,7 +58,7 @@ async function edit(req, res) {
       exercise.content = content;
     }
     if (video) {
-      const vidMimeType = video.mimetype.split("/")[1];
+      const vidMimeType = "mp4";
       const fileName = uuid.v4() + "." + vidMimeType;
       const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
       video.mv(path.resolve(__dirname, "..", "static/video", fileName));
@@ -164,9 +164,9 @@ async function getAll(req, res) {
         }
 
         if (item.video) {
-          const videoName = item.video.split(".")[0];
+          const videoName = item.video;
 
-          previewPath = videoName.replace("video", "preview") + ".jpg";
+          previewPath = videoName.replace("video", "preview").replace(".mp4", ".jpg");
 
           result.preview = previewPath;
         }
@@ -178,7 +178,7 @@ async function getAll(req, res) {
       })
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       totalPages,
       currentPage: parseInt(page, 10),
       totalCount: exercises.count,

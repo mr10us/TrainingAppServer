@@ -1,5 +1,6 @@
 const Exercises = require("../models/ExerciseModel");
 const Training = require("../models/TrainingModel");
+const TrainingExercise = require("../models/TrainingExercise");
 
 class TrainingHelper {
   constructor(training_id) {
@@ -15,23 +16,28 @@ class TrainingHelper {
   }
 
   async addExercises(exercises) {
+    const training = await this.#checkForTraining();
+
+    const addedExercises = [];
     for (const exe of exercises) {
       const existingExercise = await Exercises.findOne({
         where: { id: exe.id },
       });
 
-      if (!existingExercise)
-        throw Error(`Training with ID ${exe.id} does not exist`);
-    }
-    const training = await this.#checkForTraining();
+      if (!existingExercise) {
+        throw new Error(`Exercise with ID ${exe.id} does not exist`);
+      }
 
-    for (const exe of exercises) {
       await TrainingExercise.create({
         trainingId: training.id,
         exerciseId: exe.id,
         ordinal_number: exe.ordinal_number,
       });
+
+      addedExercises.push(existingExercise.dataValues);
     }
+
+    return addedExercises;
   }
 }
 

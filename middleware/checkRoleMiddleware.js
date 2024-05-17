@@ -17,6 +17,8 @@ module.exports = function (role) {
       req.user = decoded;
       next();
     } catch (e) {
+      if (e instanceof jwt.TokenExpiredError)
+        return res.status(401).json({ message: e.message });
       res.status(401).json({ message: "Unauthorized" });
     }
   };

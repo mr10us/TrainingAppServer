@@ -56,7 +56,7 @@ async function getAll(req, res) {
 
     const totalPages = Math.ceil(types.count / limit);
 
-    res.status(200).json({
+    return res.status(200).json({
       totalPages,
       currentPage: parseInt(page, 10),
       totalCount: types.count,
@@ -97,7 +97,6 @@ async function remove(req, res) {
     res.status(500).json({ error: "Could not remove type" });
   }
 }
-
 
 module.exports = {
   create,

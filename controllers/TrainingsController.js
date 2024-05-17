@@ -5,26 +5,24 @@ const Categories = require("../models/CategoriesModel");
 const Types = require("../models/TypesModel");
 const ApiError = require("../error/ApiError");
 const path = require("path");
+const TrainingExercise = require("../models/TrainingExercise");
+const { Op } = require("sequelize");
+const Exercise = require("../models/ExerciseModel");
 
-class TrainingsController {
-  async create(req, res, next) {
-    try {
-      let {
-        level,
-        gender,
-        exercise,
-        title,
-        content,
-        exec_time,
-      } = req.body;
+async function create(req, res, next) {
+  try {
+    let { level, gender, exercises, title, content, exec_time } = req.body;
 
-      if (!exercise) throw Error("Can not create training with no exercises");
+    if (!exercises) throw Error("Can not create training with no exercises");
 
-      const { image } = req.files;
-      let fileName = uuid.v4() + ".jpg";
-      const imagePath = `${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
-      image.mv(path.resolve(__dirname, "..", "static/image", fileName));
+    const { image } = req.files;
+    let fileName = uuid.v4() + ".jpg";
+    const imagePath = `${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
+    image.mv(path.resolve(__dirname, "..", "static/image", fileName));
 
+    const result = {};
+
+    if (exercises) {
       const training = await Training.create({
         level,
         gender,
@@ -33,19 +31,24 @@ class TrainingsController {
         content,
         exec_time,
       });
+
       const helper = new TrainingHelper(training.id);
 
-      if (exercise) {
-        await helper.addExercises(exercise);
-      }
+      result.exercises = await helper.addExercises(JSON.parse(exercises));
 
-      return res.json(training).status(200);
-    } catch (e) {
-      next(ApiError.badRequest(e.message));
+      Object.entries(training.dataValues).map(
+        ([key, value]) => (result[key] = value)
+      );
     }
-  }
 
-  async getAll(req, res) {
+    return res.json(result).status(200);
+  } catch (e) {
+    next(ApiError.badRequest(e.message));
+  }
+}
+
+async function getAll(req, res, next) {
+  try {
     let { category, type, gender, level, limit, page } = req.query;
 
     page = page || 1;
@@ -97,11 +100,74 @@ class TrainingsController {
       offset,
     });
 
-    return res.json(trainings);
-  }
+    const totalPages = Math.ceil(trainings.count / limit);
 
-  async getOne(req, res) {}
-  async edit(req, res) {}
+    return res.status(200).json({
+      totalPages,
+      currentPage: parseInt(page, 10),
+      totalCount: trainings.count,
+      trainings: trainings.rows,
+    });
+  } catch (e) {
+    next(ApiError.badRequest(e.message));
+  }
 }
 
-module.exports = new TrainingsController();
+async function getOne(req, res, next) {
+  try {
+    let trainingId = req.params.id;
+
+    if (!trainingId) throw Error("No training id provided");
+
+    const training = await Training.findByPk(trainingId);
+
+    if (!training)
+      throw Error(`Training with id: ${trainingId} does not exist`);
+
+    const result = training.dataValues;
+
+    const trainingExercises = await TrainingExercise.findAll({
+      where: { trainingId },
+    });
+    if (trainingExercises) {
+      const exerciseIds = trainingExercises.map(
+        ({ dataValues: te }) => te.exerciseId
+      );
+
+      const exercises = await Exercise.findAll({
+        where: {
+          id: exerciseIds,
+        },
+      });
+
+      const ordinalMap = trainingExercises.reduce((map, { dataValues: te }) => {
+        map[te.exerciseId] = te.ordinal_number;
+        return map;
+      }, {});
+
+      const sortedExercises = exercises
+        .map((exercise) => ({
+          ...exercise.toJSON(),
+          ordinal_number: ordinalMap[exercise.id],
+        }))
+        .sort((a, b) => {
+          return ordinalMap[a.id] - ordinalMap[b.id];
+        });
+
+      result.exercises = sortedExercises;
+    }
+    return res.json(result);
+  } catch (e) {
+    next(ApiError.badRequest(e.message));
+  }
+}
+async function edit(req, res, next) {}
+async function remove(req, res, next) {}
+
+module.exports = {
+  create,
+  edit,
+  remove,
+  getOne,
+  getAll,
+};

@@ -56,7 +56,7 @@ async function getAll(req, res) {
 
     const totalPages = Math.ceil(categories.count / limit);
 
-    res.status(200).json({
+    return res.status(200).json({
       totalPages,
       currentPage: parseInt(page, 10),
       totalCount: categories.count,
