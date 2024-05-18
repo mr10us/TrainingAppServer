@@ -17,7 +17,7 @@ async function create(req, res) {
 
     const vidMimeType = "mp4";
     const fileName = uuid.v4() + "." + vidMimeType;
-    const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
+    const videoPath = `https://${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
     video.mv(path.resolve(__dirname, "..", "static/video", fileName));
 
     await generateVideoPreview(fileName);
@@ -60,7 +60,7 @@ async function edit(req, res) {
     if (video) {
       const vidMimeType = "mp4";
       const fileName = uuid.v4() + "." + vidMimeType;
-      const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
+      const videoPath = `https://${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
       video.mv(path.resolve(__dirname, "..", "static/video", fileName));
 
       await generateVideoPreview(fileName);
