@@ -17,7 +17,7 @@ async function create(req, res, next) {
 
     const { image } = req.files;
     let fileName = uuid.v4() + ".jpg";
-    const imagePath = `${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
+    const imagePath = `https://${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
     image.mv(path.resolve(__dirname, "..", "static/image", fileName));
 
     const result = {};
