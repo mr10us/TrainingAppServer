@@ -39,6 +39,14 @@ class TrainingHelper {
 
     return addedExercises;
   }
+
+  async deleteOldExercises() {
+    const training = await this.#checkForTraining();
+
+    await TrainingExercise.destroy({
+      where: { trainingId: training.id },
+    });
+  }
 }
 
 module.exports = TrainingHelper;

@@ -1,8 +1,8 @@
 const Router = require("express");
-const videoController = require("../controllers/VideoController");
+const mediaController = require("../controllers/MediaController");
 const checkRoleMiddleware = require("../middleware/checkRoleMiddleware");
 const router = new Router();
 
-router.delete("/", checkRoleMiddleware("ADMIN"), videoController.remove);
+router.delete("/", checkRoleMiddleware("ADMIN"), mediaController.remove);
 
 module.exports = router;

@@ -17,7 +17,7 @@ async function create(req, res) {
 
     const vidMimeType = "mp4";
     const fileName = uuid.v4() + "." + vidMimeType;
-    const videoPath = `https://${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
+    const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
     video.mv(path.resolve(__dirname, "..", "static/video", fileName));
 
     await generateVideoPreview(fileName);
@@ -60,7 +60,7 @@ async function edit(req, res) {
     if (video) {
       const vidMimeType = "mp4";
       const fileName = uuid.v4() + "." + vidMimeType;
-      const videoPath = `https://${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
+      const videoPath = `${process.env.URL}:${process.env.PORT}/static/video/${fileName}`;
       video.mv(path.resolve(__dirname, "..", "static/video", fileName));
 
       await generateVideoPreview(fileName);
@@ -166,14 +166,16 @@ async function getAll(req, res) {
         if (item.video) {
           const videoName = item.video;
 
-          previewPath = videoName.replace("video", "preview").replace(".mp4", ".jpg");
+          previewPath = videoName
+            .replace("video", "preview")
+            .replace(".mp4", ".jpg");
 
           result.preview = previewPath;
         }
 
         result.categories = result.categories ? result.categories : [];
         result.types = result.types ? result.types : [];
-        
+
         return result;
       })
     );
@@ -247,12 +249,17 @@ async function remove(req, res) {
     if (!exercise) {
       return res.status(404).json({ error: "Exercise not found" });
     }
-    const [videoPath] = exercise.dataValues.video.split("/").slice(-1);
-    const previewPath = videoPath.split(".")[0] + ".jpg";
+    const videoPath = exercise.dataValues.video
+      .split("/")
+      .filter(Boolean)
+      .slice(2);
+    const previewPath = videoPath
+      .replace("video", "preview")
+      .replace(".mp4", ".jpg");
 
-    fs.unlinkSync(path.resolve(__dirname, "..", "static", "video", videoPath));
+    fs.unlinkSync(path.resolve(__dirname, "..", videoPath));
     fs.unlinkSync(
-      path.resolve(__dirname, "..", "static", "preview", previewPath)
+      path.resolve(__dirname, "..", previewPath)
     );
 
     await ExerciseTypes.destroy({ where: { exerciseId } });

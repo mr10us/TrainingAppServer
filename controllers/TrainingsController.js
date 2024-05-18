@@ -8,6 +8,7 @@ const path = require("path");
 const TrainingExercise = require("../models/TrainingExercise");
 const { Op } = require("sequelize");
 const Exercise = require("../models/ExerciseModel");
+const fs = require("fs")
 
 async function create(req, res, next) {
   try {
@@ -17,7 +18,7 @@ async function create(req, res, next) {
 
     const { image } = req.files;
     let fileName = uuid.v4() + ".jpg";
-    const imagePath = `https://${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
+    const imagePath = `${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
     image.mv(path.resolve(__dirname, "..", "static/image", fileName));
 
     const result = {};
@@ -42,6 +43,83 @@ async function create(req, res, next) {
     }
 
     return res.json(result).status(200);
+  } catch (e) {
+    next(ApiError.badRequest(e.message));
+  }
+}
+
+async function edit(req, res, next) {
+  try {
+    let { level, gender, exercises, title, content, exec_time } = req.body;
+
+    const trainingId = req.params.id;
+
+    if (!exercises) throw Error("Can not create training with no exercises");
+
+    const image = req.files?.image;
+
+    const result = {};
+
+    if (image) {
+      let fileName = uuid.v4() + ".jpg";
+      imagePath = `${process.env.URL}:${process.env.PORT}/static/image/${fileName}`;
+      image.mv(path.resolve(__dirname, "..", "static/image", fileName));
+
+      result.image = imagePath;
+    }
+
+    if (title) result.title = title;
+    if (content) result.content = content;
+    if (exec_time) result.exec_time = exec_time;
+    if (level) result.level = level;
+    if (gender) result.gender = gender;
+
+    const helper = new TrainingHelper(trainingId);
+
+    await helper.deleteOldExercises();
+
+    result.exercises = await helper.addExercises(JSON.parse(exercises));
+
+    await Training.update(result, {
+      where: { id: trainingId },
+      returning: true,
+      plain: true,
+    });
+
+    const trainingExercises = await TrainingExercise.findAll({
+      where: { trainingId },
+    });
+
+    const exerciseIds = trainingExercises.map(
+      ({ dataValues: te }) => te.exerciseId
+    );
+
+    const ordinalNumbers = trainingExercises.reduce(
+      (acc, { dataValues: te }) => {
+        acc[te.exerciseId] = te.ordinal_number;
+        return acc;
+      },
+      {}
+    );
+
+    const exercisesList = await Exercise.findAll({
+      where: {
+        id: exerciseIds,
+      },
+    });
+
+    const exercisesWithOrdinal = exercisesList.map(
+      ({ dataValues: exercise }) => ({
+        ...exercise,
+        ordinal_number: ordinalNumbers[exercise.id],
+      })
+    );
+
+    const updatedTraining = await Training.findByPk(trainingId);
+
+    updatedTraining.dataValues.exercises = exercisesWithOrdinal;
+
+    return res.status(200).json(updatedTraining.dataValues);
   } catch (e) {
     next(ApiError.badRequest(e.message));
   }
@@ -161,8 +239,38 @@ async function getOne(req, res, next) {
     next(ApiError.badRequest(e.message));
   }
 }
-async function edit(req, res, next) {}
-async function remove(req, res, next) {}
+
+async function remove(req, res, next) {
+  try {
+    const trainingId = req.params.id;
+
+    const training = await Training.findByPk(trainingId);
+
+    if (!training) {
+      return res.status(404).json({ message: 'Training not found' });
+    }
+
+    await TrainingExercise.destroy({
+      where: {
+        trainingId: trainingId
+      }
+    });
+
+    await Training.destroy({
+      where: {
+        id: trainingId
+      }
+    });
+
+    const imagePath = training.dataValues.image.split("/").filter(Boolean).slice(2).join("/");
+
+    fs.unlinkSync(path.resolve(__dirname, "..", imagePath));
+
+    return res.status(200).json({ message: 'Training deleted successfully' });
+  } catch (e) {
+    next(ApiError.badRequest(e.message));
+  }
+}
 
 module.exports = {
   create,
