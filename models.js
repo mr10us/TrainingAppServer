@@ -65,7 +65,7 @@ const Reviews = sequelize.define("reviews", {
     unique: true,
     autoIncrement: true,
   },
-  rating: { type: DataTypes.SMALLINT, allowNull: true },
+  rating: { type: DataTypes.FLOAT, allowNull: true },
   review: { type: DataTypes.TEXT, allowNull: true },
 });
 
