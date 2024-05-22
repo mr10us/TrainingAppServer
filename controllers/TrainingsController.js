@@ -1,14 +1,19 @@
-const Training = require("../models/TrainingModel");
+const {
+  Reviews,
+  Categories,
+  TrainingExercise,
+  Exercise,
+  ExerciseCategories,
+  ExerciseTypes,
+  Types,
+  Training,
+} = require("../models");
 const uuid = require("uuid");
 const TrainingHelper = require("../utils/TrainingHelper");
-const Categories = require("../models/CategoriesModel");
-const Types = require("../models/TypesModel");
 const ApiError = require("../error/ApiError");
 const path = require("path");
-const TrainingExercise = require("../models/TrainingExercise");
-const { Op } = require("sequelize");
-const Exercise = require("../models/ExerciseModel");
-const fs = require("fs")
+const fs = require("fs");
+const { calculateAverageRating } = require("../utils/calculateAverageRating");
 
 async function create(req, res, next) {
   try {
@@ -143,6 +148,11 @@ async function getAll(req, res, next) {
     const types = type ? type.split(",") : [];
     const levels = level ? level.split(",") : [];
 
+    filterClause.include.push({
+      model: Reviews,
+      attributes: ["rating"],
+    });
+
     // if (category) {
     //   filterClause.include.push({
     //     include: {
@@ -178,13 +188,27 @@ async function getAll(req, res, next) {
       offset,
     });
 
+    const trainingsWithRating = trainings.rows.map((training) => {
+      const ratingArray =
+        training.reviews.length > 0
+          ? training.reviews.map((review) => review.rating)
+          : [];
+      const rating = calculateAverageRating(ratingArray);
+
+      return {
+        ...training.toJSON(),
+
+        rating,
+      };
+    });
+
     const totalPages = Math.ceil(trainings.count / limit);
 
     return res.status(200).json({
       totalPages,
       currentPage: parseInt(page, 10),
       totalCount: trainings.count,
-      trainings: trainings.rows,
+      trainings: trainingsWithRating,
     });
   } catch (e) {
     next(ApiError.badRequest(e.message));
@@ -204,18 +228,27 @@ async function getOne(req, res, next) {
 
     const result = training.dataValues;
 
+    const reviews = await Reviews.findAll({
+      where: { trainingId: trainingId },
+    });
+
+    const ratingArray = reviews.map(({ dataValues: review }) => review.rating);
+    const avgRating = calculateAverageRating(ratingArray);
+
+    result.reviews = reviews;
+    result.rating = avgRating;
+
     const trainingExercises = await TrainingExercise.findAll({
       where: { trainingId },
     });
-    if (trainingExercises) {
+
+    if (trainingExercises.length) {
       const exerciseIds = trainingExercises.map(
         ({ dataValues: te }) => te.exerciseId
       );
 
       const exercises = await Exercise.findAll({
-        where: {
-          id: exerciseIds,
-        },
+        where: { id: exerciseIds },
       });
 
       const ordinalMap = trainingExercises.reduce((map, { dataValues: te }) => {
@@ -223,17 +256,44 @@ async function getOne(req, res, next) {
         return map;
       }, {});
 
+      const exerciseCategories = await ExerciseCategories.findAll({
+        where: { exerciseId: exerciseIds },
+      });
+      const exerciseTypes = await ExerciseTypes.findAll({
+        where: { exerciseId: exerciseIds },
+      });
+
+      const categoryIds = [
+        ...new Set(
+          exerciseCategories.map(({ dataValues: ec }) => ec.categoryId)
+        ),
+      ];
+      const typeIds = [
+        ...new Set(exerciseTypes.map(({ dataValues: et }) => et.typeId)),
+      ];
+
+      const categories = await Categories.findAll({
+        where: { id: categoryIds },
+      });
+      const types = await Types.findAll({
+        where: { id: typeIds },
+      });
+
+      result.categories = categories;
+      result.types = types;
+
       const sortedExercises = exercises
-        .map((exercise) => ({
-          ...exercise.toJSON(),
-          ordinal_number: ordinalMap[exercise.id],
-        }))
-        .sort((a, b) => {
-          return ordinalMap[a.id] - ordinalMap[b.id];
-        });
+        .map((exercise) => {
+          return {
+            ...exercise.toJSON(),
+            ordinal_number: ordinalMap[exercise.id],
+          };
+        })
+        .sort((a, b) => ordinalMap[a.id] - ordinalMap[b.id]);
 
       result.exercises = sortedExercises;
     }
+
     return res.json(result);
   } catch (e) {
     next(ApiError.badRequest(e.message));
@@ -247,26 +307,51 @@ async function remove(req, res, next) {
     const training = await Training.findByPk(trainingId);
 
     if (!training) {
-      return res.status(404).json({ message: 'Training not found' });
+      return res.status(404).json({ message: "Training not found" });
     }
 
     await TrainingExercise.destroy({
       where: {
-        trainingId: trainingId
-      }
+        trainingId: trainingId,
+      },
     });
 
     await Training.destroy({
       where: {
-        id: trainingId
-      }
+        id: trainingId,
+      },
     });
 
-    const imagePath = training.dataValues.image.split("/").filter(Boolean).slice(2).join("/");
+    const imagePath = training.dataValues.image
+      .split("/")
+      .filter(Boolean)
+      .slice(2)
+      .join("/");
 
     fs.unlinkSync(path.resolve(__dirname, "..", imagePath));
 
-    return res.status(200).json({ message: 'Training deleted successfully' });
+    return res.status(200).json({ message: "Training deleted successfully" });
+  } catch (e) {
+    next(ApiError.badRequest(e.message));
+  }
+}
+
+async function addReview(req, res, next) {
+  try {
+    const { rating, review, trainingID, userID } = req.body;
+
+    if (!trainingID || !userID) {
+      throw ApiError.badRequest("Training ID and User ID are required");
+    }
+
+    const newReview = await Reviews.create({
+      rating,
+      review,
+      trainingId: trainingID,
+      userId: userID,
+    });
+
+    return res.status(200).json(newReview);
   } catch (e) {
     next(ApiError.badRequest(e.message));
   }
@@ -278,4 +363,5 @@ module.exports = {
   remove,
   getOne,
   getAll,
+  addReview,
 };

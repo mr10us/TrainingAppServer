@@ -1,6 +1,4 @@
-const Exercises = require("../models/ExerciseModel");
-const Training = require("../models/TrainingModel");
-const TrainingExercise = require("../models/TrainingExercise");
+const {TrainingExercise, Training, Exercises} = require("../models");
 
 class TrainingHelper {
   constructor(training_id) {

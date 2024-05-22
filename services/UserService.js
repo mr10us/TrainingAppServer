@@ -1,10 +1,10 @@
-const User = require('../models/UserModel');
+const { User } = require("../models");
 
 class UserService {
   async createUserIfNotExist(chatID, username, gender, role) {
     try {
       const existingUser = await User.findOne({ where: { chatID } });
-      
+
       if (existingUser) {
         return existingUser;
       }
@@ -18,7 +18,7 @@ class UserService {
 
       return newUser;
     } catch (error) {
-      console.error('Помилка при створенні користувача:', error);
+      console.error("Помилка при створенні користувача:", error);
       throw error;
     }
   }

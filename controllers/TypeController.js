@@ -1,4 +1,4 @@
-const Types = require("../models/TypesModel");
+const {Types} = require("../models");
 const { Op } = require("sequelize");
 
 async function create(req, res) {

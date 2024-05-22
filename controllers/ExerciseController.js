@@ -1,13 +1,15 @@
-const Exercise = require("../models/ExerciseModel");
 const { Op } = require("sequelize");
 const uuid = require("uuid");
 const path = require("path");
 const { generateVideoPreview } = require("../utils/generateVideoPreview");
 const ExerciseHelper = require("../utils/ExerciseHelper");
-const ExerciseCategories = require("../models/ExerciseCategories");
-const ExerciseTypes = require("../models/ExerciseTypes");
-const Categories = require("../models/CategoriesModel");
-const Types = require("../models/TypesModel");
+const {
+  Exercise,
+  ExerciseTypes,
+  ExerciseCategories,
+  Categories,
+  Types,
+} = require("../models");
 const fs = require("fs");
 
 async function create(req, res) {
@@ -258,9 +260,7 @@ async function remove(req, res) {
       .replace(".mp4", ".jpg");
 
     fs.unlinkSync(path.resolve(__dirname, "..", videoPath));
-    fs.unlinkSync(
-      path.resolve(__dirname, "..", previewPath)
-    );
+    fs.unlinkSync(path.resolve(__dirname, "..", previewPath));
 
     await ExerciseTypes.destroy({ where: { exerciseId } });
 

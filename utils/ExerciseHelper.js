@@ -1,8 +1,10 @@
-const Categories = require("../models/CategoriesModel");
-const Types = require("../models/TypesModel");
-const ExerciseTypes = require("../models/ExerciseTypes");
-const ExerciseCategories = require("../models/ExerciseCategories");
-const Exercises = require("../models/ExerciseModel");
+const {
+  Exercises,
+  ExerciseTypes,
+  ExerciseCategories,
+  Types,
+  Categories,
+} = require("../models");
 const { Op } = require("sequelize");
 
 class ExerciseHelper {
@@ -43,7 +45,7 @@ class ExerciseHelper {
     const newCategories = await Categories.findAndCountAll({
       where: { id: { [Op.in]: categories } },
     });
-    return newCategories.rows
+    return newCategories.rows;
   }
 
   async addTypes(types) {
@@ -70,7 +72,7 @@ class ExerciseHelper {
     const newTypes = await Types.findAndCountAll({
       where: { id: { [Op.in]: types } },
     });
-    return newTypes.rows
+    return newTypes.rows;
   }
   async deleteOldTypes(newTypes) {
     const exercise = await this.#checkForExercise();

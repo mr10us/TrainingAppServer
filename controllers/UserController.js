@@ -1,5 +1,5 @@
 const ApiError = require("../error/ApiError");
-const User = require("../models/UserModel");
+const {User} = require("../models");
 const jwt = require("jsonwebtoken");
 
 const generateJwt = (id, role) => {
