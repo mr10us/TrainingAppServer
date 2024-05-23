@@ -1,5 +1,5 @@
 const {
-  Exercises,
+  Exercise,
   ExerciseTypes,
   ExerciseCategories,
   Types,
@@ -13,7 +13,7 @@ class ExerciseHelper {
   }
 
   async #checkForExercise() {
-    const exercise = await Exercises.findByPk(this.exerciseID);
+    const exercise = await Exercise.findByPk(this.exerciseID);
     if (!exercise) {
       throw new Error(`Exercise with ID ${this.exerciseID} not found.`);
     }

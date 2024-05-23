@@ -14,6 +14,8 @@ const ApiError = require("../error/ApiError");
 const path = require("path");
 const fs = require("fs");
 const { calculateAverageRating } = require("../utils/calculateAverageRating");
+const { ratings } = require("../consts");
+const { Op } = require("sequelize");
 
 async function create(req, res, next) {
   try {
@@ -120,9 +122,25 @@ async function edit(req, res, next) {
       })
     );
 
+    const exercisesWithPreview = exercisesWithOrdinal.map((exercise) => {
+      if (exercise.video) {
+        const videoName = exercise.video;
+
+        previewPath = videoName
+          .replace("video", "preview")
+          .replace(".mp4", ".jpg");
+
+        return {
+          ...exercise,
+          preview: previewPath,
+        };
+      }
+      return { ...exercise, preview: null };
+    });
+
     const updatedTraining = await Training.findByPk(trainingId);
 
-    updatedTraining.dataValues.exercises = exercisesWithOrdinal;
+    updatedTraining.dataValues.exercises = exercisesWithPreview;
 
     return res.status(200).json(updatedTraining.dataValues);
   } catch (e) {
@@ -132,7 +150,7 @@ async function edit(req, res, next) {
 
 async function getAll(req, res, next) {
   try {
-    let { category, type, gender, level, limit, page } = req.query;
+    let { categories, types, gender, level, rating, limit, page } = req.query;
 
     page = page || 1;
     limit = limit || 10;
@@ -144,37 +162,11 @@ async function getAll(req, res, next) {
       where: {},
     };
 
-    const categories = category ? category.split(",") : [];
-    const types = type ? type.split(",") : [];
+    const categoriesArray = categories ? categories.split(",") : [];
+    const typesArray = types ? types.split(",") : [];
     const levels = level ? level.split(",") : [];
+    const ratingRange = ratings[rating];
 
-    filterClause.include.push({
-      model: Reviews,
-      attributes: ["rating"],
-    });
-
-    // if (category) {
-    //   filterClause.include.push({
-    //     include: {
-    //       model: Categories,
-    //       through: TrainingCategories,
-    //       where: {
-    //         id: categories,
-    //       },
-    //     },
-    //   });
-    // }
-    // if (type) {
-    //   filterClause.include.push({
-    //     include: {
-    //       model: Types,
-    //       through: TrainingTypes,
-    //       where: {
-    //         id: types,
-    //       },
-    //     },
-    //   });
-    // }
     if (gender) {
       filterClause.where.gender = gender;
     }
@@ -182,25 +174,91 @@ async function getAll(req, res, next) {
       filterClause.where.level = levels;
     }
 
+    if (typesArray.length > 0 || categoriesArray.length > 0) {
+      let exerciseIds = new Set([]);
+
+      if (typesArray.length > 0) {
+        const exercisesWithTypes = await Exercise.findAll({
+          include: [
+            {
+              model: Types,
+              where: { id: { [Op.in]: typesArray } },
+            },
+          ],
+        });
+
+        const typesExerciseIds = exercisesWithTypes.map(
+          ({ dataValues: te }) => te.id
+        );
+        typesExerciseIds.forEach((typeId) => exerciseIds.add(typeId));
+      }
+
+      if (categoriesArray.length > 0) {
+        const exercisesWithCategories = await Exercise.findAll({
+          include: [
+            {
+              model: Categories,
+              where: { id: { [Op.in]: categoriesArray } },
+            },
+          ],
+        });
+
+        const categoriesExerciseIds = exercisesWithCategories.map(
+          ({ dataValues: ce }) => ce.id
+        );
+        exerciseIds.add(...categoriesExerciseIds);
+      }
+
+      const trainings = await TrainingExercise.findAll({
+        where: { exerciseId: { [Op.in]: [...exerciseIds] } },
+      });
+
+      const trainingIds = new Set();
+      trainings.forEach(({ dataValues: training }) =>
+        trainingIds.add(training.trainingId)
+      );
+
+      filterClause.where.id = { [Op.in]: [...trainingIds] };
+    }
+
+    filterClause.include.push({
+      model: Reviews,
+      attributes: ["rating"],
+    });
+
     trainings = await Training.findAndCountAll({
       ...filterClause,
       limit,
       offset,
     });
 
-    const trainingsWithRating = trainings.rows.map((training) => {
-      const ratingArray =
-        training.reviews.length > 0
-          ? training.reviews.map((review) => review.rating)
-          : [];
-      const rating = calculateAverageRating(ratingArray);
+    const trainingsWithRating = trainings.rows
+      .map((training) => {
+        const ratingArray =
+          training.reviews.length > 0
+            ? training.reviews.map((review) => review.rating)
+            : [];
+        const ratingAvg = calculateAverageRating(ratingArray);
 
-      return {
-        ...training.toJSON(),
+        // Filtering by rating
+        if (rating) {
+          const [min, max] = ratings[rating].split(",");
 
-        rating,
-      };
-    });
+          if (ratingAvg >= Number(min) && ratingAvg <= Number(max))
+            return {
+              ...training.toJSON(),
+
+              rating: ratingAvg,
+            };
+          else return null;
+        }
+        return {
+          ...training.toJSON(),
+
+          rating: ratingAvg,
+        };
+      })
+      .filter(Boolean);
 
     const totalPages = Math.ceil(trainings.count / limit);
 
@@ -211,6 +269,7 @@ async function getAll(req, res, next) {
       trainings: trainingsWithRating,
     });
   } catch (e) {
+    console.log(e);
     next(ApiError.badRequest(e.message));
   }
 }
