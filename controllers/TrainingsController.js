@@ -41,9 +41,11 @@ class TrainingsController {
           exec_time,
         });
 
+        const exerciseIds = JSON.parse(exercises).map(exercise => exercise.id);
+
         const helper = new TrainingHelper(training.id);
 
-        result.exercises = await helper.addExercises(JSON.parse(exercises));
+        result.exercises = await helper.addExercises(exerciseIds);
 
         Object.entries(training.dataValues).map(
           ([key, value]) => (result[key] = value)
