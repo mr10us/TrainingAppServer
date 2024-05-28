@@ -128,7 +128,7 @@ class TrainingsController {
         if (exercise.video) {
           const videoName = exercise.video;
 
-          previewPath = videoName
+          const previewPath = videoName
             .replace("video", "preview")
             .replace(".mp4", ".jpg");
 
