@@ -14,7 +14,7 @@ async function generateVideoPreview(videoName) {
     await extractFrames({
       input: videoPath,
       output: previewPath,
-      offsets: [5000] // 5000 ms = 5 seconds
+      offsets: [2000] // 5000 ms = 5 seconds
     });
     return previewPath;
   } catch (error) {
