@@ -1,4 +1,4 @@
-const {TrainingExercise, Training, Exercises} = require("../models");
+const {TrainingExercise, Training, Exercise} = require("../models");
 
 class TrainingHelper {
   constructor(training_id) {
@@ -18,7 +18,7 @@ class TrainingHelper {
 
     const addedExercises = [];
     for (const exe of exercises) {
-      const existingExercise = await Exercises.findOne({
+      const existingExercise = await Exercise.findOne({
         where: { id: exe.id },
       });
 

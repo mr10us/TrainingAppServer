@@ -41,11 +41,9 @@ class TrainingsController {
           exec_time,
         });
 
-        const exerciseIds = JSON.parse(exercises).map(exercise => exercise.id);
-
         const helper = new TrainingHelper(training.id);
 
-        result.exercises = await helper.addExercises(exerciseIds);
+        result.exercises = await helper.addExercises(JSON.parse(exercises));
 
         Object.entries(training.dataValues).map(
           ([key, value]) => (result[key] = value)
@@ -54,6 +52,7 @@ class TrainingsController {
 
       return res.json(result).status(200);
     } catch (e) {
+      console.log(e)
       next(ApiError.badRequest(e.message));
     }
   }
