@@ -10,7 +10,6 @@ const fs = require("fs");
 const https = require("https");
 
 const port = process.env.PORT;
-const webAppUrl = process.env.WEB_APP_URL;
 
 const options = {
   cert: fs.readFileSync("/etc/letsencrypt/live/vadick.online/fullchain.pem"),
