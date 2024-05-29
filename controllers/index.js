@@ -13,7 +13,7 @@ bot.on("message", async (msg) => {
           inline_keyboard: [
               [
                   {
-                      text: 'Open Web App',
+                      text: 'Почати тренування',
                       web_app: {
                           url: 'https://magenta-fairy-c53297.netlify.app/'
                       }
