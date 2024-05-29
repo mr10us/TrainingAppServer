@@ -8,6 +8,21 @@ bot.on("message", async (msg) => {
 
   if (text === "/start") {
     await UserService.createUserIfNotExist(chatId, username, null, "ADMIN");
-    await bot.sendMessage(chatId, "Тисни 'Почати'");
+    const inlineKeyboard = {
+      reply_markup: {
+          inline_keyboard: [
+              [
+                  {
+                      text: 'Open Web App',
+                      web_app: {
+                          url: 'https://magenta-fairy-c53297.netlify.app/'
+                      }
+                  }
+              ]
+          ]
+      }
+  };
+
+  bot.sendMessage(chatId, 'Тисни кнопку, щоб почати:', inlineKeyboard);
   }
 });
