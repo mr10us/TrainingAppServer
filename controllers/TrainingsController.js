@@ -353,6 +353,7 @@ class TrainingsController {
             return {
               ...exercise.toJSON(),
               ordinal_number: ordinalMap[exercise.id],
+              preview: exercise.getDataValue("video").replace(".mp4", ".jpg").replace("video", "preview"),
             };
           })
           .sort((a, b) => ordinalMap[a.id] - ordinalMap[b.id]);

@@ -48,6 +48,12 @@ class TypeController {
 
       const orderClause = [[sortBy, sortOrder]];
 
+      if (sortBy.includes("name")) {
+        const [order] = sortBy.split("name").filter(Boolean);
+
+        orderClause[0] = ["name", order === "-" ? "DESC" : "ASC"];
+      }
+
       const types = await Types.findAndCountAll({
         where: whereClause,
         order: orderClause,
