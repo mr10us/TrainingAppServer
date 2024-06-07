@@ -2,7 +2,7 @@ const { bot } = require("../index");
 const UserService = require("../services/UserService");
 
 bot.on("message", async (msg) => {
-  const chatId = msg.chat.id;
+  const chatId = msg.chat.id.toString();
   const username = msg.chat?.first_name || msg.chat?.username;
   const text = msg.text;
 

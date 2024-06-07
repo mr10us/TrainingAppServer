@@ -30,9 +30,8 @@ class UserController {
 
   async login(req, res, next) {
     const { chatID } = req.body;
-    console.log(req.body)
     
-    const user = await User.findOne({ where: { chatID } });
+    const user = await User.findOne({ where: { chatID: String(chatID) } });
     if (!user) {
       return next(ApiError.internal("Користувача не знайдено"));
     }
