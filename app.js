@@ -11,10 +11,10 @@ const https = require("https");
 
 const port = process.env.PORT;
 
-const options = {
-  cert: fs.readFileSync("/etc/letsencrypt/live/vadick.online/fullchain.pem"),
-  key: fs.readFileSync("/etc/letsencrypt/live/vadick.online/privkey.pem"),
-};
+// const options = {
+//   cert: fs.readFileSync("/etc/letsencrypt/live/vadick.online/fullchain.pem"),
+//   key: fs.readFileSync("/etc/letsencrypt/live/vadick.online/privkey.pem"),
+// };
 
 const app = express();
 
@@ -27,14 +27,14 @@ app.use("/api", router);
 
 app.use(errorHandler);
 
-const server = https.createServer(options, app);
+// const server = https.createServer(options, app);
 
 const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
     console.log("DB connection has been established successfully.");
-    server.listen(port, () => console.log("server started on PORT " + port));
+    app.listen(port, () => console.log("server started on PORT " + port));
   } catch (error) {
     console.log(error);
   }
