@@ -11,10 +11,10 @@ const https = require("https");
 
 const port = process.env.PORT;
 
-// const options = {
-//   cert: fs.readFileSync("/etc/letsencrypt/live/vadick.online/fullchain.pem"),
-//   key: fs.readFileSync("/etc/letsencrypt/live/vadick.online/privkey.pem"),
-// };
+const options = {
+  cert: fs.readFileSync("/etc/letsencrypt/live/vadick.online/fullchain.pem"),
+  key: fs.readFileSync("/etc/letsencrypt/live/vadick.online/privkey.pem"),
+};
 
 const app = express();
 
@@ -27,7 +27,7 @@ app.use("/api", router);
 
 app.use(errorHandler);
 
-// const server = https.createServer(options, app);
+const server = https.createServer(options, app);
 
 const start = async () => {
   try {
