@@ -3,12 +3,12 @@ const { DataTypes } = require("sequelize");
 
 const User = sequelize.define("user", {
   id: {
-    type: DataTypes.TEXT,
+    type: DataTypes.INTEGER,
     primaryKey: true,
     unique: true,
     autoIncrement: true,
   },
-  chatID: { type: DataTypes.INTEGER, unique: true },
+  chatID: { type: DataTypes.TEXT, unique: true },
   username: { type: DataTypes.STRING, allowNull: true },
   gender: { type: DataTypes.SMALLINT, allowNull: true },
   role: { type: DataTypes.STRING, defaultValue: "USER" },
