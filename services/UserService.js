@@ -10,7 +10,7 @@ class UserService {
       }
 
       const newUser = await User.create({
-        chatID,
+        chatID: String(chatID),
         username,
         gender,
         role,
