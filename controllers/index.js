@@ -7,9 +7,6 @@ bot.on("message", async (msg) => {
   const username = msg.chat?.first_name || msg.chat?.username;
   const text = msg.text;
 
-  await Password.create({password: 12345})
-  await Password.create({password: 54321})
-  await Password.create({password: 32415})
 
   if (text === "/start") {
     await UserService.createUserIfNotExist(chatId, username, null, "VISITOR");
