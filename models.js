@@ -1,7 +1,7 @@
 const sequelize = require("./db/index")
 const { DataTypes } = require("sequelize");
 
-const Password = sequelize.define('Password', {
+const Password = sequelize.define('password', {
   password: { type: DataTypes.INTEGER, allowNull: false },
 });
 
