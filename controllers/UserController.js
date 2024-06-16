@@ -1,5 +1,5 @@
 const ApiError = require("../error/ApiError");
-const {User} = require("../models");
+const { User } = require("../models");
 const jwt = require("jsonwebtoken");
 
 const generateJwt = (id, role) => {
@@ -30,8 +30,8 @@ class UserController {
 
   async login(req, res, next) {
     const { chatID } = req.body;
-    
-    const user = await User.findOne({ where: { chatID: String(chatID) } });
+
+    const user = await User.findOne({ where: { chatID } });
     if (!user) {
       return next(ApiError.internal("Користувача не знайдено"));
     }

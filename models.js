@@ -1,6 +1,10 @@
 const sequelize = require("./db/index")
 const { DataTypes } = require("sequelize");
 
+const Password = sequelize.define('Password', {
+  password: { type: DataTypes.INTEGER, allowNull: false },
+});
+
 const User = sequelize.define("user", {
   id: {
     type: DataTypes.INTEGER,
@@ -8,10 +12,10 @@ const User = sequelize.define("user", {
     unique: true,
     autoIncrement: true,
   },
-  chatID: { type: DataTypes.STRING, unique: true },
+  chatID: { type: DataTypes.BIGINT, unique: true },
   username: { type: DataTypes.STRING, allowNull: true },
   gender: { type: DataTypes.SMALLINT, allowNull: true },
-  role: { type: DataTypes.STRING, defaultValue: "USER" },
+  role: { type: DataTypes.STRING, defaultValue: "VISITOR" },
 });
 
 const Exercise = sequelize.define("exercise", {
@@ -116,4 +120,5 @@ module.exports = {
   Training,
   TrainingExercise,
   Reviews,
+  Password
 };
