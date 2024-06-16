@@ -21,6 +21,7 @@
     "express-fileupload": "^1.5.0",
     "ffmpeg-extract-frames": "^2.0.2",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
     "node-telegram-bot-api": "^0.65.1",
     "pg": "^8.11.5",
     "pg-hstore": "^2.3.4",

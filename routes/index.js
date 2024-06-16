@@ -5,6 +5,7 @@ const exerciseRouter = require("./exerciseRouter");
 const typeRouter = require("../routes/typeRouter");
 const categoryRouter = require("../routes/categoryRouter");
 const mediaRouter = require("./mediaRouter");
+const accessRouter = require("./accessRouter");
 
 const router = new Router();
 
@@ -14,5 +15,6 @@ router.use("/exercise", exerciseRouter);
 router.use("/type", typeRouter);
 router.use("/category", categoryRouter);
 router.use("/media", mediaRouter)
+router.use("/access", accessRouter)
 
 module.exports = router;
