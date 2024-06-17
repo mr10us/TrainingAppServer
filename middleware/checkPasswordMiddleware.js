@@ -12,20 +12,22 @@ module.exports = function () {
         return res.status(401).json({ message: "Unauthorized" });
       }
       const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
       if (decoded?.role === "ADMIN") {
         next();
-      }
-      Password.findAll({
-        order: [["createdAt", "DESC"]],
-      }).then((currentPasswords) => {
-        const currentPassword = currentPasswords.length
-          ? currentPasswords[0]
-          : null;
+      } else {
+        Password.findAll({
+          order: [["createdAt", "DESC"]],
+        }).then((currentPasswords) => {
+          const currentPassword = currentPasswords.length
+            ? currentPasswords[0]
+            : null;
 
-        if (decoded?.password != currentPassword.password) {
-          return res.status(403).json({ message: "password do not match" });
-        } else next();
-      });
+          if (decoded?.password != currentPassword.password) {
+            return res.status(403).json({ message: "password do not match" });
+          } else next();
+        });
+      }
     } catch (e) {
       console.log(e);
       if (e instanceof jwt.TokenExpiredError)
