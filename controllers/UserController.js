@@ -72,7 +72,7 @@ class UserController {
         }
 
         const token = generateJwt(user.id, user.role, password);
-        return res.json({ user, token });
+        return res.json({ candidate, token });
       } else {
         const token = generateJwt(candidate.id, candidate.role, null);
         return res.json({ candidate, token });
