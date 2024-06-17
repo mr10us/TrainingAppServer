@@ -12,7 +12,9 @@ module.exports = function () {
         return res.status(401).json({ message: "Unauthorized" });
       }
       const decoded = jwt.verify(token, process.env.SECRET_KEY);
-
+      if (decoded?.role === "ADMIN") {
+        next();
+      }
       Password.findAll({
         order: [["createdAt", "DESC"]],
       }).then((currentPasswords) => {
