@@ -21,7 +21,7 @@ module.exports = function () {
           : null;
 
         if (decoded?.password != currentPassword.password) {
-          return res.status(403).json({ message: "Forbidden" });
+          return res.status(403).json({ message: "password do not match" });
         } else next();
       });
     } catch (e) {
