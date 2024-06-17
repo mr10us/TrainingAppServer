@@ -9,6 +9,7 @@ const errorHandler = require("./middleware/ErrorHandlingMiddleware");
 const fs = require("fs");
 const https = require("https");
 const cron = require("node-cron");
+const { Password } = require("./models");
 
 const port = process.env.PORT;
 
@@ -48,6 +49,7 @@ const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    await Password.create({password: "654321"});
     console.log("DB connection has been established successfully.");
     server.listen(port, () => console.log("server started on PORT " + port));
   } catch (error) {
