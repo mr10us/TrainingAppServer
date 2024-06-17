@@ -20,4 +20,4 @@ jobs:
         script: |
           cd ~/artem/TrainingAppServer
           git pull
-          
+          supervisorctl restart fitness_app
