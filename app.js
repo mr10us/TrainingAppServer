@@ -6,31 +6,31 @@ const sequelize = require("./db");
 const fileUpload = require("express-fileupload");
 const router = require("./routes/index");
 const errorHandler = require("./middleware/ErrorHandlingMiddleware");
-const fs = require("fs");
-const https = require("https");
-const cron = require("node-cron");
-const { Password } = require("./models");
+// const fs = require("fs");
+// const https = require("https");
+// const cron = require("node-cron");
+// const { Password } = require("./models");
 
 const port = process.env.PORT;
 
-const options = {
-  cert: fs.readFileSync("/etc/letsencrypt/live/vadick.online/fullchain.pem"),
-  key: fs.readFileSync("/etc/letsencrypt/live/vadick.online/privkey.pem"),
-};
+// const options = {
+//   cert: fs.readFileSync("/etc/letsencrypt/live/vadick.online/fullchain.pem"),
+//   key: fs.readFileSync("/etc/letsencrypt/live/vadick.online/privkey.pem"),
+// };
 
-function generatePassword() {
-  return Math.floor(100000 + Math.random() * 900000)
-    .toString()
-    .slice(0, 6);
-}
+// function generatePassword() {
+//   return Math.floor(100000 + Math.random() * 900000)
+//     .toString()
+//     .slice(0, 6);
+// }
 
-async function generateAndSavePassword() {
-  const newPassword = generatePassword();
-  await Password.create({ password: newPassword });
-  console.log(`New password generated: ${newPassword}`);
-}
+// async function generateAndSavePassword() {
+//   const newPassword = generatePassword();
+//   await Password.create({ password: newPassword });
+//   console.log(`New password generated: ${newPassword}`);
+// }
 
-cron.schedule("0 0 * * *", generateAndSavePassword);
+// cron.schedule("0 0 * * *", generateAndSavePassword);
 
 const app = express();
 
@@ -43,14 +43,14 @@ app.use("/api", router);
 
 app.use(errorHandler);
 
-const server = https.createServer(options, app);
+// const server = https.createServer(options, app);
 
 const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
     console.log("DB connection has been established successfully.");
-    server.listen(port, () => console.log("server started on PORT " + port));
+    app.listen(port, () => console.log("server started on PORT " + port));
   } catch (error) {
     console.log(error);
   }

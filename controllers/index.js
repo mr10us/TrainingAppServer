@@ -27,14 +27,14 @@ bot.on("message", async (msg) => {
 
     bot.sendMessage(chatId, "Тисни кнопку, щоб почати:", inlineKeyboard);
   }
-  if (text === ".пароль") {
-    const currentPasswords = await Password.findAll({
-      order: [["createdAt", "DESC"]],
-    });
-    const currentPassword = currentPasswords.length
-      ? currentPasswords[0]
-      : null;
+  // if (text === ".пароль") {
+  //   const currentPasswords = await Password.findAll({
+  //     order: [["createdAt", "DESC"]],
+  //   });
+  //   const currentPassword = currentPasswords.length
+  //     ? currentPasswords[0]
+  //     : null;
     
-    bot.sendMessage(chatId, `Ваш пароль: ${currentPassword?.password}`);
-  }
+  //   bot.sendMessage(chatId, `Ваш пароль: ${currentPassword?.password}`);
+  // }
 });
